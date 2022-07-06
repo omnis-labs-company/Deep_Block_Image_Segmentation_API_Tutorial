@@ -1,0 +1,222 @@
+<html>
+    <head>
+        <title>Deep Block image segmentation API tutorial</title>
+    </head>
+
+    <body>
+        <div id="wrapper">
+            <div>
+                <video id="camView" autoplay="true">
+                </video>
+                <div class="buttonClass">
+                    <button onclick="takePic()">Take a Picture</button>
+                </div>
+            </div>
+            <div>
+                <canvas id="takenPicture">
+                </canvas>
+                <div class="buttonClass">
+                    <button onclick="runInference()">Find hair</button>
+                </div>                
+            </div>
+            <div>
+                <img id="resultImage">
+                <div id="statusDiv">
+                </div>
+            </div>
+        </div>
+    </body>
+</html>
+
+<style>
+    body {
+        margin: 0;
+    }
+    #wrapper {
+        display: flex;
+    }
+    #wrapper > div {
+        flex-basis: 33.33%;
+        border: 1px solid black;
+        align-content: center;
+    }
+    .buttonClass {
+        text-align: center;
+    }
+    canvas {
+        display: block;
+        margin: 0 auto;
+    }
+</style>
+
+<script>
+    function startApp() {
+        const camViewElem = document.getElementById("camView");
+        if (navigator.mediaDevices.getUserMedia) {
+            navigator.mediaDevices.getUserMedia({ video: true })
+                .then(function (stream) {
+                    camViewElem.srcObject = stream;
+                }).catch(function (err) {
+                    console.log(err);
+                });
+        }
+    }
+
+    function takePic() {
+        const camViewElem = document.getElementById("camView");
+        const takenPictureCanvas = document.getElementById("takenPicture");
+        takenPictureCanvas.getContext('2d').drawImage(camViewElem, 0, 0, takenPictureCanvas.width, takenPictureCanvas.height);
+    }
+
+    function b64toBlob(b64Data, contentType) {
+        contentType = contentType || '';
+        sliceSize = 512;
+        const byteCharacters = atob(b64Data);
+        const byteArrays = [];
+        for (let offset = 0; offset < byteCharacters.length; offset += sliceSize) {
+            const slice = byteCharacters.slice(offset, offset + sliceSize);
+            const byteNumbers = new Array(slice.length);
+            for (let i = 0; i < slice.length; i++) {
+                byteNumbers[i] = slice.charCodeAt(i);
+            }
+            const byteArray = new Uint8Array(byteNumbers);
+            byteArrays.push(byteArray);
+        }
+        const blob = new Blob(byteArrays, {type: contentType});
+        return blob;
+    }
+
+    function dataURItoBlob(dataURI) {
+        const block = dataURI.split(";");
+        const contentType = block[0].split(":")[1];
+        const realData = block[1].split(",")[1];
+        const blob = b64toBlob(realData, contentType);
+        return blob;
+    }
+
+    function renderResult(base64Image) {
+        const resultImage = document.getElementById("resultImage");
+        resultImage.src = base64Image;
+    }
+
+    function downloadImage(domain, projectID, apiKey, imageID) {
+        const downloadURL = `${domain}/storage_api/file_system/image_segmentation/projects/${projectID}/visualized-files/${imageID}`;
+        fetch(downloadURL, {
+            method: "GET",
+            headers: {
+                Authorization: apiKey,
+                timestamp: Date.now()
+            }
+        }).then(response => response.text())
+        .then(textResponse => {
+            const base64Image = `data:image/jpeg;base64,${textResponse}`;
+            renderResult(base64Image);
+        });
+    }
+
+    function getImageID(domain, projectID, apiKey, fileName) {
+        const getResultsURL = `${domain}/master_api/project_api/projects/${projectID}/result`
+        fetch(getResultsURL, {
+            method: "GET",
+            headers: {
+                Authorization: apiKey,
+                timestamp: Date.now()
+            }
+        }).then(response=>response.json())
+        .then(data=>{
+            for (let image of data.cocoJson.images) {
+                if(image.file_name === fileName) {
+                    const imageID = image.id;
+                    downloadImage(domain, projectID, apiKey, imageID);
+                    break;
+                }
+            }
+        });
+    }
+    
+    var intervalID;
+    
+    function checkStatus(domain, projectID, apiKey, fileName) {
+        const statusURL = `${domain}/master_api/project_api/projects/${projectID}/check-status`;
+
+        fetch(statusURL, {
+            method: "GET",
+            headers: {
+                Authorization: apiKey,
+                timestamp: Date.now()
+            }
+        }).then(response=>response.json())
+        .then(data=>{
+            console.log(data);
+            if(data.status === 0) {
+                stopStatusCheck();
+                getImageID(domain, projectID, apiKey, fileName);
+            }
+        });
+    }
+
+    function startStatusCheck(domain, projectID, apiKey, fileName) {
+        intervalID = setInterval(checkStatus, 10000, domain, projectID, apiKey, fileName);
+    }
+
+    function stopStatusCheck() {
+        clearInterval(intervalID);
+    }
+
+    function startInference(domain, projectID, apiKey, fileName) {
+        const predictFormData = new FormData();
+        predictFormData.append('projectID', projectID);
+        predictFormData.append('config[gpus]', '1');
+        predictFormData.append('config[score]', '30');
+
+        const startURL = `${domain}/master_api/project_api/projects/${projectID}/predict`;
+
+        fetch(startURL, {
+            method: "POST",
+            headers: {
+                Authorization: apiKey,
+                timestamp: Date.now()
+            },
+            body: predictFormData
+        }).then((response) => {
+            startStatusCheck(domain, projectID, apiKey, fileName);
+        });
+    }
+
+    function uploadImage(domain, projectID, apiKey) {
+        const takenPictureCanvas = document.getElementById("takenPicture");
+        const dataURL = takenPictureCanvas.toDataURL("image/jpeg");
+        const blob = dataURItoBlob(dataURL);
+        const uploadTimestamp = Date.now().toString();
+        const fileName  = `${uploadTimestamp}.jpeg`;
+
+        const file = new File([blob], fileName);
+        
+        const uploadFormData = new FormData();
+        uploadFormData.append('projectID', projectID);
+        uploadFormData.append('files', file);
+
+        const url = `${domain}/storage_api/file_system/image_segmentation/projects/${projectID}/predict-files?store=false`;
+        
+        fetch(url, {
+            method: "POST",
+            headers: {
+                Authorization: apiKey,
+                timestamp: uploadTimestamp
+            },
+            body: uploadFormData
+        }).then((response) => {
+            startInference(domain, projectID, apiKey, fileName);
+        });
+    }
+
+    function runInference() {       
+        const projectID = "Your project ID here";
+        const apiKey = "Your API key here";
+        const domain = "https://app.deepblock.net";
+
+        uploadImage(domain, projectID, apiKey);
+    }
+
+    startApp();    
+</script>
