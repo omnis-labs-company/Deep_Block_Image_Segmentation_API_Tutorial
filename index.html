@@ -100,7 +100,7 @@
     }
 
     function downloadImage(domain, projectID, apiKey, imageID) {
-        const downloadURL = `${domain}/storage_api/file_system/image_segmentation/projects/${projectID}/visualized-files/${imageID}`;
+        const downloadURL = `${domain}/storage_api/file_system/image_segmentation/projects/${projectID}/visualized/base64/${imageID}`;
         fetch(downloadURL, {
             method: "GET",
             headers: {
@@ -115,7 +115,7 @@
     }
 
     function getImageID(domain, projectID, apiKey, fileName) {
-        const getResultsURL = `${domain}/master_api/project_api/projects/${projectID}/result`
+        const getResultsURL = `${domain}/master_api/projects/${projectID}/result`
         fetch(getResultsURL, {
             method: "GET",
             headers: {
@@ -137,7 +137,7 @@
     var intervalID;
     
     function checkStatus(domain, projectID, apiKey, fileName) {
-        const statusURL = `${domain}/master_api/project_api/projects/${projectID}/check-status`;
+        const statusURL = `${domain}/master_api/projects/${projectID}/project-status`;
 
         fetch(statusURL, {
             method: "GET",
@@ -163,13 +163,10 @@
         clearInterval(intervalID);
     }
 
-    function startInference(domain, projectID, apiKey, fileName) {
-        const predictFormData = new FormData();
-        predictFormData.append('projectID', projectID);
-        predictFormData.append('config[gpus]', '1');
-        predictFormData.append('config[score]', '30');
+    function startInference(domain, projectID, score, apiKey, fileName) {
 
-        const startURL = `${domain}/master_api/project_api/projects/${projectID}/predict`;
+
+        const startURL = `${domain}/master_api/projects/${projectID}/predict/${score}`;
 
         fetch(startURL, {
             method: "POST",
@@ -177,7 +174,6 @@
                 Authorization: apiKey,
                 timestamp: Date.now()
             },
-            body: predictFormData
         }).then((response) => {
             startStatusCheck(domain, projectID, apiKey, fileName);
         });
@@ -206,11 +202,11 @@
             },
             body: uploadFormData
         }).then((response) => {
-            startInference(domain, projectID, apiKey, fileName);
+            startInference(domain, projectID, 30, apiKey, fileName);
         });
     }
 
-    function runInference() {       
+    function runInference() {
         const projectID = "Your project ID here";
         const apiKey = "Your API key here";
         const domain = "https://app.deepblock.net";
