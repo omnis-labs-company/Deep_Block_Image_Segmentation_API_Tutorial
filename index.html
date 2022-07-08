@@ -165,10 +165,8 @@
         clearInterval(intervalID);
     }
 
-    function startInference(domain, projectID, score, apiKey, fileName) {
-
-
-        const startURL = `${domain}/master_api/projects/${projectID}/predict/${score}`;
+    function startInference(domain, projectID, thresholdScore, apiKey, fileName) {
+        const startURL = `${domain}/master_api/projects/${projectID}/predict/${thresholdScore}`;
 
         fetch(startURL, {
             method: "POST",
