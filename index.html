@@ -179,7 +179,7 @@
         });
     }
 
-    function uploadImage(domain, projectID, apiKey) {
+    function uploadImage(domain, projectID, apiKey, thresholdScore) {
         const takenPictureCanvas = document.getElementById("takenPicture");
         const dataURL = takenPictureCanvas.toDataURL("image/jpeg");
         const blob = dataURItoBlob(dataURL);
@@ -202,7 +202,7 @@
             },
             body: uploadFormData
         }).then((response) => {
-            startInference(domain, projectID, 30, apiKey, fileName);
+            startInference(domain, projectID, thresholdScore, apiKey, fileName);
         });
     }
 
@@ -210,8 +210,10 @@
         const projectID = "Your project ID here";
         const apiKey = "Your API key here";
         const domain = "https://app.deepblock.net";
+        // A value between 0 and 100
+        const thresholdScore = 30;
 
-        uploadImage(domain, projectID, apiKey);
+        uploadImage(domain, projectID, apiKey, thresholdScore);
     }
 
     startApp();    
