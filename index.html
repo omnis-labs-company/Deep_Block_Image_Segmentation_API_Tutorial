@@ -65,7 +65,9 @@
     function takePic() {
         const camViewElem = document.getElementById("camView");
         const takenPictureCanvas = document.getElementById("takenPicture");
-        takenPictureCanvas.getContext('2d').drawImage(camViewElem, 0, 0, takenPictureCanvas.width, takenPictureCanvas.height);
+        takenPictureCanvas.height = camViewElem.videoHeight;
+        takenPictureCanvas.width = camViewElem.videoWidth;
+        takenPictureCanvas.getContext('2d').drawImage(camViewElem, 0, 0, camViewElem.videoWidth, camViewElem.videoHeight);
     }
 
     function b64toBlob(b64Data, contentType) {
