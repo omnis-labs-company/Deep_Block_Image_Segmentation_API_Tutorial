@@ -156,7 +156,7 @@
     }
 
     function startStatusCheck(domain, projectID, apiKey, fileName) {
-        intervalID = setInterval(checkStatus, 10000, domain, projectID, apiKey, fileName);
+        intervalID = setInterval(checkStatus, 3000, domain, projectID, apiKey, fileName);
     }
 
     function stopStatusCheck() {
