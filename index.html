@@ -101,8 +101,8 @@
         resultImage.src = base64Image;
     }
 
-    function downloadImage(domain, projectID, apiKey, imageID) {
-        const downloadURL = `${domain}/storage_api/file_system/image_segmentation/projects/${projectID}/visualized/base64/${imageID}`;
+    function downloadImage(domain, projectKey, apiKey, imageID) {
+        const downloadURL = `${domain}/storage_api/file_system/image_segmentation/projects/${projectKey}/visualized/base64/${imageID}`;
         fetch(downloadURL, {
             method: "GET",
             headers: {
@@ -116,8 +116,8 @@
         });
     }
 
-    function getImageID(domain, projectID, apiKey, fileName) {
-        const getResultsURL = `${domain}/master_api/projects/${projectID}/result`
+    function getImageID(domain, projectKey, apiKey, fileName) {
+        const getResultsURL = `${domain}/master_api/projects/${projectKey}/result`
         fetch(getResultsURL, {
             method: "GET",
             headers: {
@@ -129,7 +129,7 @@
             for (let image of data.cocoJson.images) {
                 if(image.file_name === fileName) {
                     const imageID = image.id;
-                    downloadImage(domain, projectID, apiKey, imageID);
+                    downloadImage(domain, projectKey, apiKey, imageID);
                     break;
                 }
             }
@@ -138,8 +138,8 @@
     
     var intervalID;
     
-    function checkStatus(domain, projectID, apiKey, fileName) {
-        const statusURL = `${domain}/master_api/projects/${projectID}/project-status`;
+    function checkStatus(domain, projectKey, apiKey, fileName) {
+        const statusURL = `${domain}/master_api/projects/${projectKey}/project-status`;
 
         fetch(statusURL, {
             method: "GET",
@@ -152,22 +152,22 @@
             console.log(data);
             if(data.status === 0) {
                 stopStatusCheck();
-                getImageID(domain, projectID, apiKey, fileName);
+                getImageID(domain, projectKey, apiKey, fileName);
             }
         });
     }
 
-    function startStatusCheck(domain, projectID, apiKey, fileName) {
+    function startStatusCheck(domain, projectKey, apiKey, fileName) {
         const msInterval = 3000;
-        intervalID = setInterval(checkStatus, msInterval, domain, projectID, apiKey, fileName);
+        intervalID = setInterval(checkStatus, msInterval, domain, projectKey, apiKey, fileName);
     }
 
     function stopStatusCheck() {
         clearInterval(intervalID);
     }
 
-    function startInference(domain, projectID, thresholdScore, apiKey, fileName) {
-        const startURL = `${domain}/master_api/projects/${projectID}/predict/${thresholdScore}`;
+    function startInference(domain, projectKey, thresholdScore, apiKey, fileName) {
+        const startURL = `${domain}/master_api/projects/${projectKey}/predict/${thresholdScore}`;
 
         fetch(startURL, {
             method: "POST",
@@ -176,11 +176,11 @@
                 timestamp: Date.now()
             },
         }).then((response) => {
-            startStatusCheck(domain, projectID, apiKey, fileName);
+            startStatusCheck(domain, projectKey, apiKey, fileName);
         });
     }
 
-    function uploadImage(domain, projectID, apiKey, thresholdScore) {
+    function uploadImage(domain, projectKey, apiKey, thresholdScore) {
         const takenPictureCanvas = document.getElementById("takenPicture");
         const dataURL = takenPictureCanvas.toDataURL("image/jpeg");
         const blob = dataURItoBlob(dataURL);
@@ -190,10 +190,9 @@
         const file = new File([blob], fileName);
         
         const uploadFormData = new FormData();
-        uploadFormData.append('projectID', projectID);
         uploadFormData.append('files', file);
 
-        const url = `${domain}/storage_api/file_system/image_segmentation/projects/${projectID}/predict-files?store=false`;
+        const url = `${domain}/storage_api/file_system/image_segmentation/projects/${projectKey}/predict-files?store=false`;
         
         fetch(url, {
             method: "POST",
@@ -203,7 +202,7 @@
             },
             body: uploadFormData
         }).then((response) => {
-            startInference(domain, projectID, thresholdScore, apiKey, fileName);
+            startInference(domain, projectKey, thresholdScore, apiKey, fileName);
         });
     }
 
@@ -214,7 +213,7 @@
         // A value between 0 and 100
         const thresholdScore = 30;
 
-        uploadImage(domain, projectID, apiKey, thresholdScore);
+        uploadImage(domain, projectKey, apiKey, thresholdScore);
     }
 
     startApp();    
