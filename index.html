@@ -65,7 +65,9 @@
     function takePic() {
         const camViewElem = document.getElementById("camView");
         const takenPictureCanvas = document.getElementById("takenPicture");
-        takenPictureCanvas.getContext('2d').drawImage(camViewElem, 0, 0, takenPictureCanvas.width, takenPictureCanvas.height);
+        takenPictureCanvas.height = camViewElem.videoHeight;
+        takenPictureCanvas.width = camViewElem.videoWidth;
+        takenPictureCanvas.getContext('2d').drawImage(camViewElem, 0, 0, camViewElem.videoWidth, camViewElem.videoHeight);
     }
 
     function b64toBlob(b64Data, contentType) {
@@ -100,7 +102,7 @@
     }
 
     function downloadImage(domain, projectID, apiKey, imageID) {
-        const downloadURL = `${domain}/storage_api/file_system/image_segmentation/projects/${projectID}/visualized-files/${imageID}`;
+        const downloadURL = `${domain}/storage_api/file_system/image_segmentation/projects/${projectID}/visualized/base64/${imageID}`;
         fetch(downloadURL, {
             method: "GET",
             headers: {
@@ -115,7 +117,7 @@
     }
 
     function getImageID(domain, projectID, apiKey, fileName) {
-        const getResultsURL = `${domain}/master_api/project_api/projects/${projectID}/result`
+        const getResultsURL = `${domain}/master_api/projects/${projectID}/result`
         fetch(getResultsURL, {
             method: "GET",
             headers: {
@@ -137,7 +139,7 @@
     var intervalID;
     
     function checkStatus(domain, projectID, apiKey, fileName) {
-        const statusURL = `${domain}/master_api/project_api/projects/${projectID}/check-status`;
+        const statusURL = `${domain}/master_api/projects/${projectID}/project-status`;
 
         fetch(statusURL, {
             method: "GET",
@@ -156,20 +158,16 @@
     }
 
     function startStatusCheck(domain, projectID, apiKey, fileName) {
-        intervalID = setInterval(checkStatus, 10000, domain, projectID, apiKey, fileName);
+        const msInterval = 3000;
+        intervalID = setInterval(checkStatus, msInterval, domain, projectID, apiKey, fileName);
     }
 
     function stopStatusCheck() {
         clearInterval(intervalID);
     }
 
-    function startInference(domain, projectID, apiKey, fileName) {
-        const predictFormData = new FormData();
-        predictFormData.append('projectID', projectID);
-        predictFormData.append('config[gpus]', '1');
-        predictFormData.append('config[score]', '30');
-
-        const startURL = `${domain}/master_api/project_api/projects/${projectID}/predict`;
+    function startInference(domain, projectID, thresholdScore, apiKey, fileName) {
+        const startURL = `${domain}/master_api/projects/${projectID}/predict/${thresholdScore}`;
 
         fetch(startURL, {
             method: "POST",
@@ -177,13 +175,12 @@
                 Authorization: apiKey,
                 timestamp: Date.now()
             },
-            body: predictFormData
         }).then((response) => {
             startStatusCheck(domain, projectID, apiKey, fileName);
         });
     }
 
-    function uploadImage(domain, projectID, apiKey) {
+    function uploadImage(domain, projectID, apiKey, thresholdScore) {
         const takenPictureCanvas = document.getElementById("takenPicture");
         const dataURL = takenPictureCanvas.toDataURL("image/jpeg");
         const blob = dataURItoBlob(dataURL);
@@ -206,16 +203,18 @@
             },
             body: uploadFormData
         }).then((response) => {
-            startInference(domain, projectID, apiKey, fileName);
+            startInference(domain, projectID, thresholdScore, apiKey, fileName);
         });
     }
 
-    function runInference() {       
+    function runInference() {
         const projectID = "Your project ID here";
         const apiKey = "Your API key here";
         const domain = "https://app.deepblock.net";
+        // A value between 0 and 100
+        const thresholdScore = 30;
 
-        uploadImage(domain, projectID, apiKey);
+        uploadImage(domain, projectID, apiKey, thresholdScore);
     }
 
     startApp();    
