@@ -47,6 +47,9 @@
         display: block;
         margin: 0 auto;
     }
+    #statusDIv {
+        text-align: center;
+    }
 </style>
 
 <script>
@@ -149,7 +152,8 @@
             }
         }).then(response=>response.json())
         .then(data=>{
-            console.log(data);
+            const statusDiv = document.getElementById("statusDiv");
+            statusDiv.innerHTML = data.message;
             if(data.status === 0) {
                 stopStatusCheck();
                 getImageID(domain, projectKey, apiKey, fileName);
@@ -157,9 +161,9 @@
         });
     }
 
-    function startStatusCheck(domain, projectKey, apiKey, fileName) {
-        const msInterval = 3000;
-        intervalID = setInterval(checkStatus, msInterval, domain, projectKey, apiKey, fileName);
+    function startStatusCheck(domain, projectID, apiKey, fileName) {
+        const msInterval = 5000;
+        intervalID = setInterval(checkStatus, msInterval, domain, projectID, apiKey, fileName);
     }
 
     function stopStatusCheck() {
