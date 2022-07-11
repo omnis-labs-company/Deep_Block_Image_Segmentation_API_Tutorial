@@ -158,7 +158,8 @@
     }
 
     function startStatusCheck(domain, projectID, apiKey, fileName) {
-        intervalID = setInterval(checkStatus, 3000, domain, projectID, apiKey, fileName);
+        const msInterval = 3000;
+        intervalID = setInterval(checkStatus, msInterval, domain, projectID, apiKey, fileName);
     }
 
     function stopStatusCheck() {
