@@ -17,7 +17,7 @@ You need to place them in
 
 ```
 function runInference() {
-        const projectKey = "Your project ID here";
+        const projectID = "Your project ID here";
         const apiKey = "Your API key here";
         ...
 }
@@ -60,7 +60,7 @@ First you need to upload the images you want to run inference on through an HTTP
   const uploadFormData = new FormData();
   uploadFormData.append('files', file);
 
-  const url = `https://app.deepblock.net/storage_api/file_system/image_segmentation/projects/${projectKey}/predict-files?store=false`;
+  const url = `https://app.deepblock.net/storage_api/file_system/image_segmentation/projects/${projectID}/predict-files?store=false`;
 
   fetch(url, {
     method: "POST",
@@ -72,12 +72,12 @@ First you need to upload the images you want to run inference on through an HTTP
   })
 ```
 
-To do this, you need to create a [File](https://developer.mozilla.org/en-US/docs/Web/API/File) object with the image data and set it as the 'files' entry in a [FormData](https://developer.mozilla.org/en-US/docs/Web/API/FormData) object which you put as the body of the request. You also need to put the projectKey of the specific project you want to use as a parameter in the URL as shown above. Your API key and a current timestamp need to be specified as headers.
+To do this, you need to create a [File](https://developer.mozilla.org/en-US/docs/Web/API/File) object with the image data and set it as the 'files' entry in a [FormData](https://developer.mozilla.org/en-US/docs/Web/API/FormData) object which you put as the body of the request. You also need to put the projectID of the specific project you want to use as a parameter in the URL as shown above. Your API key and a current timestamp need to be specified as headers.
 
 If you want to run inference on only the images you upload right now, you first need to make sure that the project does not contain any previously uploaded images for inference. To do this, you can use the remove predict files API call before uploading your images:
 
 ```
-fetch(`https://app.deepblock.net/storage_api/file_system/image_segmentation/projects/${projectKey}/predict-files`, {
+fetch(`https://app.deepblock.net/storage_api/file_system/image_segmentation/projects/${projectID}/predict-files`, {
   method: "DELETE",
   headers: {
     Authorization: apiKey,
@@ -89,7 +89,7 @@ fetch(`https://app.deepblock.net/storage_api/file_system/image_segmentation/proj
 Next, you need to use the following HTTP request to start running inference on the uploaded images:
 
 ```
-fetch(`https://app.deepblock.net/master_api/projects/${projectKey}/predict/${thresholdScore}`, {
+fetch(`https://app.deepblock.net/master_api/projects/${projectID}/predict/${thresholdScore}`, {
   method: "POST",
   headers: {
     Authorization: apiKey,
@@ -103,7 +103,7 @@ Here, thresholdScore is the level of confidence the model needs to have in its p
 To know when the inference is complete, you need to periodically check the status of the project. This can be done through this HTTP request:
 
 ```
-fetch(`https://app.deepblock.net/master_api/projects/${projectKey}/project-status`, {
+fetch(`https://app.deepblock.net/master_api/projects/${projectID}/project-status`, {
   method: "GET",
   headers: {
     Authorization: apiKey,
@@ -114,7 +114,7 @@ fetch(`https://app.deepblock.net/master_api/projects/${projectKey}/project-statu
 If the status is equal to 0, inference is complete and you can proceed with getting the results:
 
 ```
-fetch(`https://app.deepblock.net/master_api/projects/${projectKey}/result`, {
+fetch(`https://app.deepblock.net/master_api/projects/${projectID}/result`, {
   method: "GET",
   headers: {
     Authorization: apiKey,
@@ -126,7 +126,7 @@ fetch(`https://app.deepblock.net/master_api/projects/${projectKey}/result`, {
 This will return the predictions in the format of a JSON file which has the entries 'images', 'annotations' for each image and 'categories'. You can use the predictions specified in 'annotations' to complete your task! Additionally, if you need an easy way to visualize the predictions of an image, we have an API call for that as well:
 
 ```
-fetch(`https://app.deepblock.net/storage_api/file_system/image_segmentation/projects/${projectKey}/visualized/base64/${imageID}`, {
+fetch(`https://app.deepblock.net/storage_api/file_system/image_segmentation/projects/${projectID}/visualized/base64/${imageID}`, {
   method: "GET",
   headers: {
     Authorization: apiKey,
