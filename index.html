@@ -104,8 +104,8 @@
         resultImage.src = base64Image;
     }
 
-    function downloadImage(domain, projectKey, apiKey, imageID) {
-        const downloadURL = `${domain}/storage_api/file_system/image_segmentation/projects/${projectKey}/visualized/base64/${imageID}`;
+    function downloadImage(domain, projectID, apiKey, imageID) {
+        const downloadURL = `${domain}/storage_api/file_system/image_segmentation/projects/${projectID}/visualized/base64/${imageID}`;
         fetch(downloadURL, {
             method: "GET",
             headers: {
@@ -119,8 +119,8 @@
         });
     }
 
-    function getImageID(domain, projectKey, apiKey, fileName) {
-        const getResultsURL = `${domain}/master_api/projects/${projectKey}/result`
+    function getImageID(domain, projectID, apiKey, fileName) {
+        const getResultsURL = `${domain}/master_api/projects/${projectID}/result`
         fetch(getResultsURL, {
             method: "GET",
             headers: {
@@ -132,7 +132,7 @@
             for (let image of data.cocoJson.images) {
                 if(image.file_name === fileName) {
                     const imageID = image.id;
-                    downloadImage(domain, projectKey, apiKey, imageID);
+                    downloadImage(domain, projectID, apiKey, imageID);
                     break;
                 }
             }
@@ -141,8 +141,8 @@
     
     var intervalID;
     
-    function checkStatus(domain, projectKey, apiKey, fileName) {
-        const statusURL = `${domain}/master_api/projects/${projectKey}/project-status`;
+    function checkStatus(domain, projectID, apiKey, fileName) {
+        const statusURL = `${domain}/master_api/projects/${projectID}/project-status`;
 
         fetch(statusURL, {
             method: "GET",
@@ -156,7 +156,7 @@
             statusDiv.innerHTML = data.message;
             if(data.status === 0) {
                 stopStatusCheck();
-                getImageID(domain, projectKey, apiKey, fileName);
+                getImageID(domain, projectID, apiKey, fileName);
             }
         });
     }
@@ -170,8 +170,8 @@
         clearInterval(intervalID);
     }
 
-    function startInference(domain, projectKey, thresholdScore, apiKey, fileName) {
-        const startURL = `${domain}/master_api/projects/${projectKey}/predict/${thresholdScore}`;
+    function startInference(domain, projectID, thresholdScore, apiKey, fileName) {
+        const startURL = `${domain}/master_api/projects/${projectID}/predict/${thresholdScore}`;
 
         fetch(startURL, {
             method: "POST",
@@ -180,11 +180,11 @@
                 timestamp: Date.now()
             },
         }).then((response) => {
-            startStatusCheck(domain, projectKey, apiKey, fileName);
+            startStatusCheck(domain, projectID, apiKey, fileName);
         });
     }
 
-    function uploadImage(domain, projectKey, apiKey, thresholdScore) {
+    function uploadImage(domain, projectID, apiKey, thresholdScore) {
         const takenPictureCanvas = document.getElementById("takenPicture");
         const dataURL = takenPictureCanvas.toDataURL("image/jpeg");
         const blob = dataURItoBlob(dataURL);
@@ -196,7 +196,7 @@
         const uploadFormData = new FormData();
         uploadFormData.append('files', file);
 
-        const url = `${domain}/storage_api/file_system/image_segmentation/projects/${projectKey}/predict-files?store=false`;
+        const url = `${domain}/storage_api/file_system/image_segmentation/projects/${projectID}/predict-files?store=false`;
         
         fetch(url, {
             method: "POST",
@@ -206,18 +206,18 @@
             },
             body: uploadFormData
         }).then((response) => {
-            startInference(domain, projectKey, thresholdScore, apiKey, fileName);
+            startInference(domain, projectID, thresholdScore, apiKey, fileName);
         });
     }
 
     function runInference() {
-        const projectKey = "Your project ID here";
+        const projectID = "Your project ID here";
         const apiKey = "Your API key here";
         const domain = "https://app.deepblock.net";
         // A value between 0 and 100
         const thresholdScore = 30;
 
-        uploadImage(domain, projectKey, apiKey, thresholdScore);
+        uploadImage(domain, projectID, apiKey, thresholdScore);
     }
 
     startApp();    
