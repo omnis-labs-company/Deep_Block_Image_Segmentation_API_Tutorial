@@ -194,7 +194,6 @@
         const file = new File([blob], fileName);
         
         const uploadFormData = new FormData();
-        uploadFormData.append('projectID', projectID);
         uploadFormData.append('files', file);
 
         const url = `${domain}/storage_api/file_system/image_segmentation/projects/${projectID}/predict-files?store=false`;
